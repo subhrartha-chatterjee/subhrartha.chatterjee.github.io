@@ -1,30 +1,611 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Subhrartha Portfolio</title>
-</head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subhrartha Chatterjee — GIS Analyst</title>
+<meta name="description" content="GIS Analyst specializing in electrical distribution network mapping, geodatabase QC, and ArcPy automation tooling.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B121C;
+    --surface:#121D2C;
+    --surface-2:#16233570;
+    --line:#25344A;
+    --amber:#E8A33D;
+    --amber-dim:#E8A33D33;
+    --cyan:#57C7D4;
+    --text:#E7EBF0;
+    --muted:#8695A8;
+    --muted-2:#5C6C80;
+    --radius:4px;
+    --wrap:1100px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:'Space Grotesk',sans-serif; font-weight:600; letter-spacing:-0.01em; }
+  .mono{ font-family:'JetBrains Mono',monospace; }
+  a{ color:inherit; text-decoration:none; }
+  .wrap{ max-width:var(--wrap); margin:0 auto; padding:0 32px; }
+  ::selection{ background:var(--amber); color:#0B121C; }
 
+  a:focus-visible, button:focus-visible{
+    outline:2px solid var(--cyan);
+    outline-offset:3px;
+  }
+
+  /* faint drawing-sheet corner ticks, used once as the page's signature frame */
+  .ticks::before, .ticks::after,
+  .ticks-b::before, .ticks-b::after{
+    content:""; position:absolute; width:18px; height:18px;
+    border:1px solid var(--muted-2); opacity:.5;
+  }
+  .ticks::before{ top:0; left:0; border-right:none; border-bottom:none; }
+  .ticks::after{ top:0; right:0; border-left:none; border-bottom:none; }
+  .ticks-b::before{ bottom:0; left:0; border-right:none; border-top:none; }
+  .ticks-b::after{ bottom:0; right:0; border-left:none; border-top:none; }
+
+  /* ---------- NAV ---------- */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:#0B121Ccc; backdrop-filter:blur(10px);
+    border-bottom:1px solid transparent;
+    transition:border-color .3s ease, background .3s ease;
+  }
+  header.scrolled{ border-bottom-color:var(--line); }
+  nav.wrap{ display:flex; align-items:center; justify-content:space-between; height:64px; }
+  .brand{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:17px; display:flex; align-items:center; gap:8px; }
+  .brand .dot{ width:7px; height:7px; border-radius:50%; background:var(--amber); box-shadow:0 0 8px var(--amber); }
+  .navlinks{ display:flex; gap:28px; font-size:14px; color:var(--muted); }
+  .navlinks a{ transition:color .2s ease; }
+  .navlinks a:hover{ color:var(--text); }
+  .navcta{
+    font-size:13px; padding:8px 14px; border:1px solid var(--line); border-radius:var(--radius);
+    color:var(--text); transition:border-color .2s ease, background .2s ease;
+  }
+  .navcta:hover{ border-color:var(--amber); background:var(--amber-dim); }
+  .navtoggle{ display:none; background:none; border:1px solid var(--line); border-radius:4px; color:var(--text); width:36px; height:36px; }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative; padding:168px 0 96px; overflow:hidden;
+  }
+  #netCanvas{ position:absolute; inset:0; width:100%; height:100%; opacity:.55; }
+  .hero .wrap{ position:relative; z-index:2; }
+  .hero-top{ display:grid; grid-template-columns:1.35fr 0.9fr; gap:56px; align-items:start; margin-bottom:64px; }
+  .photo-frame{
+    position:relative; justify-self:end; width:min(280px, 100%);
+    border:1px solid var(--line); border-radius:6px; padding:10px;
+    background:var(--surface);
+  }
+  .photo-frame img{ width:100%; display:block; border-radius:3px; }
+  .photo-frame .tag{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted-2);
+    margin-top:10px; padding:0 2px;
+  }
+  .photo-frame .tag .live{ color:var(--amber); display:flex; align-items:center; gap:5px; }
+  .photo-frame .tag .live::before{ content:""; width:5px; height:5px; border-radius:50%; background:var(--amber); box-shadow:0 0 6px var(--amber); }
+  .eyebrow-tag{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--cyan);
+    border:1px solid #57C7D444; padding:5px 10px; border-radius:var(--radius);
+    margin-bottom:28px; background:#57C7D40d;
+  }
+  .eyebrow-tag .sep{ color:var(--muted-2); }
+  .hero h1{
+    font-size:clamp(2.2rem, 4.4vw, 3.6rem); line-height:1.1; margin-bottom:22px;
+  }
+  .hero h1 .accent{ color:var(--amber); }
+  .hero p.lede{
+    max-width:560px; color:var(--muted); font-size:17px; margin-bottom:36px;
+  }
+  .hero-ctas{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:0; }
+  .btn{
+    font-size:14.5px; font-weight:500; padding:12px 22px; border-radius:var(--radius);
+    display:inline-flex; align-items:center; gap:8px; transition:transform .15s ease, background .2s ease, border-color .2s ease;
+  }
+  .btn-primary{ background:var(--amber); color:#1A1204; }
+  .btn-primary:hover{ transform:translateY(-1px); background:#f0ae4c; }
+  .btn-ghost{ border:1px solid var(--line); color:var(--text); }
+  .btn-ghost:hover{ border-color:var(--muted); }
+
+  .stat-strip{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line);
+    border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+  }
+  .stat{ background:var(--surface); padding:22px 20px; }
+  .stat .num{ font-family:'Space Grotesk',sans-serif; font-size:1.9rem; font-weight:600; color:var(--text); }
+  .stat .num span{ color:var(--amber); }
+  .stat .label{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+
+  /* ---------- SECTION SHELL ---------- */
+  section{ padding:104px 0; position:relative; }
+  .section-head{ margin-bottom:52px; max-width:640px; }
+  .kicker{
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted-2);
+    margin-bottom:10px;
+  }
+  .section-head h2{ font-size:clamp(1.6rem,3vw,2.1rem); margin-bottom:14px; }
+  .section-head p{ color:var(--muted); font-size:15.5px; max-width:520px; }
+
+  /* ---------- TOOLS ---------- */
+  .tools-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+  .tool-card{ background:var(--surface); padding:34px; position:relative; }
+  .tool-card .diagram{ width:64px; height:64px; margin-bottom:22px; }
+  .tool-card h3{ font-size:1.15rem; margin-bottom:10px; }
+  .tool-card p{ color:var(--muted); font-size:14.5px; margin-bottom:18px; }
+  .stack-row{ display:flex; flex-wrap:wrap; gap:8px; }
+  .stack-tag{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--cyan);
+    border:1px solid #57C7D433; padding:4px 8px; border-radius:3px;
+  }
+
+  /* ---------- EXPERIENCE TIMELINE ---------- */
+  .timeline{ position:relative; padding-left:34px; }
+  .timeline::before{
+    content:""; position:absolute; left:5px; top:6px; bottom:6px; width:2px;
+    background:repeating-linear-gradient(180deg, var(--amber) 0 6px, transparent 6px 12px);
+  }
+  .tl-item{ position:relative; padding-bottom:56px; }
+  .tl-item:last-child{ padding-bottom:0; }
+  .tl-node{
+    position:absolute; left:-34px; top:4px; width:11px; height:11px; border-radius:50%;
+    background:var(--bg); border:2px solid var(--amber); box-shadow:0 0 0 4px var(--bg);
+  }
+  .tl-item.current .tl-node{ background:var(--amber); box-shadow:0 0 0 4px var(--bg), 0 0 12px var(--amber); }
+  .tl-head{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:6px; }
+  .tl-role{ font-size:1.15rem; font-weight:600; font-family:'Space Grotesk',sans-serif; }
+  .tl-org{ color:var(--amber); font-size:14.5px; }
+  .tl-date{ font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted-2); white-space:nowrap; }
+  .tl-item ul{ margin-top:14px; padding-left:18px; color:var(--muted); font-size:14.5px; }
+  .tl-item li{ margin-bottom:8px; }
+  .tl-item li::marker{ color:var(--cyan); }
+  .badge-current{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber);
+    border:1px solid var(--amber-dim); background:var(--amber-dim); padding:3px 8px; border-radius:3px;
+  }
+
+  /* ---------- SKILLS ---------- */
+  .skills-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:28px 40px; }
+  .skill-group .g-title{ font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--cyan); margin-bottom:14px; }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:9px; }
+  .chip{
+    font-size:13.5px; padding:7px 13px; border:1px solid var(--line); border-radius:20px; color:var(--text);
+    background:var(--surface);
+  }
+
+  /* ---------- EDUCATION / CERTS ---------- */
+  .split2{ display:grid; grid-template-columns:1.1fr 1fr; gap:56px; }
+  .edu-item{ padding:18px 0; border-bottom:1px solid var(--line); }
+  .edu-item:first-child{ padding-top:0; }
+  .edu-item .deg{ font-weight:600; font-size:15px; }
+  .edu-item .inst{ color:var(--muted); font-size:13.5px; margin-top:3px; }
+  .edu-item .yr{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted-2); margin-top:5px; }
+  .cert-item{ display:flex; gap:12px; padding:14px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .cert-item:first-child{ padding-top:0; }
+  .cert-item .yr-badge{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--cyan); white-space:nowrap; padding-top:2px;
+  }
+
+  /* ---------- CONTACT / FOOTER ---------- */
+  .contact-panel{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:56px 48px; position:relative;
+  }
+  .contact-panel h2{ font-size:clamp(1.6rem,3vw,2.2rem); margin-bottom:16px; max-width:520px; }
+  .contact-panel p{ color:var(--muted); max-width:460px; margin-bottom:32px; }
+  .contact-links{ display:flex; flex-wrap:wrap; gap:14px; }
+  .clink{
+    display:flex; align-items:center; gap:10px; font-family:'JetBrains Mono',monospace; font-size:13.5px;
+    border:1px solid var(--line); padding:11px 16px; border-radius:var(--radius); transition:border-color .2s ease, transform .15s ease;
+  }
+  .clink:hover{ border-color:var(--cyan); transform:translateY(-1px); }
+  .clink .ic{ color:var(--amber); }
+
+  footer{ padding:40px 0 60px; text-align:center; color:var(--muted-2); font-size:13px; }
+  footer .coord{ font-family:'JetBrains Mono',monospace; margin-top:6px; font-size:11.5px; }
+
+  @media (max-width: 860px){
+    .navlinks{ display:none; }
+    .navtoggle{ display:block; }
+    .hero-top{ grid-template-columns:1fr; gap:32px; }
+    .photo-frame{ justify-self:start; width:180px; order:-1; }
+    .stat-strip{ grid-template-columns:repeat(2,1fr); }
+    .tools-grid{ grid-template-columns:1fr; }
+    .skills-grid{ grid-template-columns:1fr; }
+    .split2{ grid-template-columns:1fr; gap:40px; }
+    .contact-panel{ padding:40px 24px; }
+    .wrap{ padding:0 20px; }
+    section{ padding:76px 0; }
+  }
+</style>
+</head>
 <body>
 
-<h1>Subhrartha Chatterjee</h1>
-<p>GIS Executive | Electrical Engineer</p>
+<header id="siteHeader">
+  <nav class="wrap">
+    <a href="#home" class="brand"><span class="dot"></span>Subhrartha Chatterjee</a>
+    <div class="navlinks">
+      <a href="#tools">Tools</a>
+      <a href="#experience">Experience</a>
+      <a href="#skills">Skills</a>
+      <a href="#education">Education</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <a href="#contact" class="navcta">Get in touch</a>
+  </nav>
+</header>
 
-<h2>About Me</h2>
-<p>
-I am a GIS Executive working on electrical network mapping,
-DGPS survey, and utility GIS projects.
-</p>
+<section class="hero" id="home">
+  <canvas id="netCanvas"></canvas>
+  <div class="wrap">
+    <div class="hero-top">
+      <div>
+        <div class="eyebrow-tag">GIS ANALYST <span class="sep">/</span> WEST BENGAL, INDIA</div>
+        <h1>I map electrical distribution networks — <span class="accent">and build the tools</span> that keep the data honest.</h1>
+        <p class="lede">Field surveys, feeder QC, and PSS/GSS digitization for DISCOM projects, backed by custom ArcGIS Python (ArcPy) automation that validates, fills, and links geodatabase records at scale.</p>
+        <div class="hero-ctas">
+          <a href="resume.pdf" class="btn btn-primary" download>⬇ Download CV</a>
+          <a href="mailto:chatterjeesubhrartha@gmail.com" class="btn btn-ghost">Email me</a>
+        </div>
+      </div>
+      <div class="photo-frame">
+        <img src="subhrartha-photo.jpg" alt="Subhrartha Chatterjee, GIS Analyst">
+        <div class="tag">
+          <span>ID: GIS-WB-01</span>
+          <span class="live">AVAILABLE</span>
+        </div>
+      </div>
+    </div>
+    <div class="stat-strip">
+      <div class="stat"><div class="num"><span>1000</span>+</div><div class="label">Feeders QC'd — field &amp; backend</div></div>
+      <div class="stat"><div class="num"><span>500</span>+</div><div class="label">PSS/GSS digitized</div></div>
+      <div class="stat"><div class="num"><span>4</span></div><div class="label">ArcPy automation tools shipped</div></div>
+      <div class="stat"><div class="num"><span>2+</span></div><div class="label">Years in DISCOM GIS operations</div></div>
+    </div>
+  </div>
+</section>
 
-<h2>Skills</h2>
-<ul>
-<li>ArcGIS, QGIS</li>
-<li>DGPS Survey</li>
-<li>Electrical Networks</li>
-<li>Excel MIS</li>
-</ul>
+<section id="tools">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">// automation</div>
+      <h2>Tools I built to keep large geodatabases honest</h2>
+      <p>Custom ArcGIS Python toolboxes, developed with AI-assisted engineering, to replace repetitive manual QC and data entry across dozens of feature classes.</p>
+    </div>
 
-<h2>Contact</h2>
-<p>Email: chatterjeesubhrartha@gmail.com</p>
+    <div class="tools-grid ticks ticks-b" style="position:relative;">
+      <div class="tool-card">
+        <svg class="diagram" viewBox="0 0 64 64" fill="none">
+          <rect x="6" y="6" width="52" height="52" rx="2" stroke="#25344A" stroke-width="1.5"/>
+          <path d="M14 44V26h9M14 26h9M32 44V20h9M32 20h9M50 44V32h-4" stroke="#E8A33D" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="14" cy="44" r="2.5" fill="#57C7D4"/>
+          <circle cx="32" cy="44" r="2.5" fill="#57C7D4"/>
+          <circle cx="50" cy="44" r="2.5" fill="#57C7D4"/>
+        </svg>
+        <h3>Bulk Attribute Fill</h3>
+        <p>Fills 40+ shared administrative fields — organization, circle, division, zone codes — across every selected layer in one run, matched by field name or alias so it survives schema drift.</p>
+        <div class="stack-row">
+          <span class="stack-tag">ArcPy</span><span class="stack-tag">Python 2.7</span><span class="stack-tag">ArcMap 10.8</span>
+        </div>
+      </div>
+
+      <div class="tool-card">
+        <svg class="diagram" viewBox="0 0 64 64" fill="none">
+          <path d="M32 8 L54 18 V34 C54 46 44 54 32 58 C20 54 10 46 10 34 V18 Z" stroke="#25344A" stroke-width="1.5"/>
+          <path d="M22 32 L29 39 L43 24" stroke="#E8A33D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>GDB Validator</h3>
+        <p>Checks mandatory-field completeness and domain-code compliance across 50+ feature classes in a single pass, producing one consolidated CSV report instead of dozens of manual spot-checks.</p>
+        <div class="stack-row">
+          <span class="stack-tag">Domain QC</span><span class="stack-tag">CSV Reporting</span><span class="stack-tag">ArcPy</span>
+        </div>
+      </div>
+
+      <div class="tool-card">
+        <svg class="diagram" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="4" fill="#E8A33D"/>
+          <circle cx="14" cy="18" r="3" stroke="#57C7D4" stroke-width="1.6"/>
+          <circle cx="50" cy="18" r="3" stroke="#57C7D4" stroke-width="1.6"/>
+          <circle cx="14" cy="48" r="3" stroke="#57C7D4" stroke-width="1.6"/>
+          <circle cx="50" cy="48" r="3" stroke="#57C7D4" stroke-width="1.6"/>
+          <path d="M32 32 L14 18 M32 32 L50 18 M32 32 L14 48 M32 32 L50 48" stroke="#25344A" stroke-width="1.5"/>
+        </svg>
+        <h3>Survey ID &amp; Structure Linker</h3>
+        <p>Auto-generates unique survey IDs, feature codes, and UTM Zone 45N coordinates, then spatially links every line feature to its nearest point structure — no manual From/To tagging.</p>
+        <div class="stack-row">
+          <span class="stack-tag">Spatial Join</span><span class="stack-tag">UTM 45N</span><span class="stack-tag">ArcPy</span>
+        </div>
+      </div>
+
+      <div class="tool-card">
+        <svg class="diagram" viewBox="0 0 64 64" fill="none">
+          <rect x="8" y="10" width="20" height="26" rx="1.5" stroke="#25344A" stroke-width="1.5"/>
+          <path d="M12 16h12M12 21h12M12 26h8" stroke="#25344A" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M32 24h14" stroke="#E8A33D" stroke-width="2" stroke-linecap="round"/>
+          <path d="M42 19l6 5-6 5" stroke="#E8A33D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="36" y="34" width="20" height="20" rx="1.5" stroke="#57C7D4" stroke-width="1.5"/>
+          <path d="M40 44h12M40 48h8" stroke="#57C7D4" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <h3>Excel → GDB Loader</h3>
+        <p>Loads field survey data from Excel into matching gdb rows by a join key, auto-correcting values against the domain-code master — flags anything unresolved instead of failing silently.</p>
+        <div class="stack-row">
+          <span class="stack-tag">openpyxl</span><span class="stack-tag">Domain Matching</span><span class="stack-tag">ArcPy</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="experience">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">// feeder line</div>
+      <h2>Experience</h2>
+      <p>Two-plus years across field survey, digitization, and now automation-led GIS operations for electrical distribution utilities.</p>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-item current">
+        <div class="tl-node"></div>
+        <div class="tl-head">
+          <div>
+            <div class="tl-role">GIS Analyst <span class="badge-current" style="margin-left:8px;">CURRENT</span></div>
+            <div class="tl-org">Niyal Tritech Pvt Ltd</div>
+          </div>
+          <div class="tl-date">2026 — Present</div>
+        </div>
+        <ul>
+          <li>Field data collection, feeder QC, and PSS/GSS digitization using ArcGIS and AutoCAD for DISCOM network datasets — 1000+ feeders QC'd and 500+ PSS/GSS digitized across field and backend review.</li>
+          <li>Designed and shipped four ArcPy automation tools (bulk fill, validation, survey ID generation, Excel loading) now used across large multi-layer geodatabases.</li>
+          <li>Built domain-code and mandatory-field QC covering 50+ feature classes, replacing manual spot-checking with one consolidated report.</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-node"></div>
+        <div class="tl-head">
+          <div>
+            <div class="tl-role">GIS Executive</div>
+            <div class="tl-org">Tata Power Southern Odisha Distribution Ltd</div>
+          </div>
+          <div class="tl-date">2024 — 2026</div>
+        </div>
+        <ul>
+          <li>Surveyed poles, RMUs, transformers, cables, and consumers with DGPS to build a structured GIS database.</li>
+          <li>Digitized base maps and distribution networks from satellite imagery using georeferencing.</li>
+          <li>Synchronized GIS asset data with ADMS and coordinated with Operations, Metering, and Projects teams on data integration.</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-node"></div>
+        <div class="tl-head">
+          <div>
+            <div class="tl-role">GIS Executive</div>
+            <div class="tl-org">RAMTeCH Software Solutions</div>
+          </div>
+          <div class="tl-date">2023 — 2024</div>
+        </div>
+        <ul>
+          <li>Prepared land base data and digitized distribution networks in ArcMap 10.8, QGIS, and Google Earth.</li>
+          <li>Ran consumer tagging and data quality checks to finalize GIS datasets for handover.</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-node"></div>
+        <div class="tl-head">
+          <div>
+            <div class="tl-role">Technician Trainee</div>
+            <div class="tl-org">Indorama India Pvt. Ltd.</div>
+          </div>
+          <div class="tl-date">2022 — 2023</div>
+        </div>
+        <ul>
+          <li>Maintained and troubleshot motors, motor control centers (MCC), transformers, circuit breakers, and diesel generators.</li>
+          <li>Read, interpreted, and prepared single line diagrams (SLD) for electrical systems; operated synchronizing panels for grid-to-STG synchronization.</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:22px; font-size:12.5px; color:var(--muted-2); font-family:'JetBrains Mono',monospace;">Full role dates available on request or in the downloadable CV.</p>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">// stack</div>
+      <h2>Skills &amp; tools</h2>
+    </div>
+    <div class="skills-grid">
+      <div class="skill-group">
+        <div class="g-title">GIS Software</div>
+        <div class="chip-row">
+          <span class="chip">ArcGIS Pro</span><span class="chip">ArcMap 10.8</span><span class="chip">QGIS</span>
+          <span class="chip">AutoCAD</span><span class="chip">GE Smallworld</span><span class="chip">Google Earth Pro</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="g-title">Automation &amp; Scripting</div>
+        <div class="chip-row">
+          <span class="chip">Python (ArcPy)</span><span class="chip">AI-Assisted Development</span>
+          <span class="chip">Workflow Automation</span><span class="chip">openpyxl</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="g-title">Data Management</div>
+        <div class="chip-row">
+          <span class="chip">Geodatabases</span><span class="chip">Attribute Tables</span>
+          <span class="chip">Domain &amp; Mandatory-Field QC</span><span class="chip">Data Validation</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="g-title">Mapping &amp; Visualization</div>
+        <div class="chip-row">
+          <span class="chip">Thematic Mapping</span><span class="chip">Layout Design</span>
+          <span class="chip">Spatial Reporting (Excel)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="education">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">// records</div>
+      <h2>Education &amp; certifications</h2>
+    </div>
+    <div class="split2">
+      <div>
+        <div class="edu-item">
+          <div class="deg">B.Tech, Electrical Engineering</div>
+          <div class="inst">Maulana Abul Kalam Azad University of Technology, WB</div>
+          <div class="yr">CGPA: 6.0/10</div>
+        </div>
+        <div class="edu-item">
+          <div class="deg">Diploma, Electrical Engineering</div>
+          <div class="inst">WB State Council of Technical &amp; Vocational Education</div>
+          <div class="yr">2020 · CGPA 7.05/10</div>
+        </div>
+        <div class="edu-item">
+          <div class="deg">Higher Secondary, Science</div>
+          <div class="inst">WB Council of Higher Secondary Education</div>
+          <div class="yr">2017 · CGPA 6.65/10</div>
+        </div>
+        <div class="edu-item">
+          <div class="deg">Secondary Examination</div>
+          <div class="inst">WB Board of Secondary Education</div>
+          <div class="yr">2010 · CGPA 5.14/10</div>
+        </div>
+      </div>
+      <div>
+        <div class="cert-item">
+          <div class="yr-badge">2024</div>
+          <div>Electrical Supervisor Certificate — West Bengal Electrical Licensing Board</div>
+        </div>
+        <div class="cert-item">
+          <div class="yr-badge">2022</div>
+          <div>Information Technology Application Certificate — Dept. of Youth Services, Govt. of West Bengal (Grade A+)</div>
+        </div>
+        <div class="cert-item">
+          <div class="yr-badge">—</div>
+          <div>Industrial Automation with PLC</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="wrap">
+    <div class="contact-panel ticks ticks-b">
+      <h2>Let's talk about maps, grids, and the tools that hold them together.</h2>
+      <p>Open to GIS analyst and automation-focused roles in electrical distribution and utility mapping.</p>
+      <div class="contact-links">
+        <a class="clink" href="mailto:chatterjeesubhrartha@gmail.com"><span class="ic">✉</span>chatterjeesubhrartha@gmail.com</a>
+        <a class="clink" href="tel:+917477898502"><span class="ic">☎</span>+91 74778 98502</a>
+        <a class="clink" href="https://www.linkedin.com/in/subhrartha-chatterjee-00409a237/" target="_blank" rel="noopener"><span class="ic">in</span>linkedin.com/in/subhrartha-chatterjee</a>
+        <a class="clink" href="https://github.com/crana8400-creator" target="_blank" rel="noopener"><span class="ic">◆</span>github.com/crana8400-creator</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>© 2026 Subhrartha Chatterjee. Built with data, not just design.</div>
+  <div class="coord">23.2N 87.4E — WEST BENGAL, IN</div>
+</footer>
+
+<script>
+  // header scroll state
+  const header = document.getElementById('siteHeader');
+  window.addEventListener('scroll', () => {
+    header.classList.toggle('scrolled', window.scrollY > 12);
+  }, { passive:true });
+
+  // Hero network animation: a quiet transmission-grid graphic.
+  // One orchestrated moment, not a scattered decorative effect.
+  const canvas = document.getElementById('netCanvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, nodes = [];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize(){
+    w = canvas.width = canvas.offsetWidth * devicePixelRatio;
+    h = canvas.height = canvas.offsetHeight * devicePixelRatio;
+  }
+
+  function initNodes(){
+    nodes = [];
+    const count = Math.max(14, Math.floor((canvas.offsetWidth * canvas.offsetHeight) / 42000));
+    for(let i=0;i<count;i++){
+      nodes.push({
+        x: Math.random()*w, y: Math.random()*h,
+        vx: (Math.random()-0.5)*0.15*devicePixelRatio,
+        vy: (Math.random()-0.5)*0.15*devicePixelRatio,
+        pulse: Math.random()*Math.PI*2
+      });
+    }
+  }
+
+  function step(){
+    ctx.clearRect(0,0,w,h);
+    const maxDist = 190 * devicePixelRatio;
+
+    for(const n of nodes){
+      n.x += n.vx; n.y += n.vy;
+      if(n.x < 0 || n.x > w) n.vx *= -1;
+      if(n.y < 0 || n.y > h) n.vy *= -1;
+      n.pulse += 0.02;
+    }
+
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const a = nodes[i], b = nodes[j];
+        const d = Math.hypot(a.x-b.x, a.y-b.y);
+        if(d < maxDist){
+          ctx.strokeStyle = `rgba(87,199,212,${0.16 * (1 - d/maxDist)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+          ctx.stroke();
+        }
+      }
+    }
+    for(const n of nodes){
+      const r = (1.6 + Math.sin(n.pulse)*0.8) * devicePixelRatio;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(232,163,61,0.55)';
+      ctx.fill();
+    }
+    if(!reduceMotion) requestAnimationFrame(step);
+  }
+
+  function start(){
+    resize(); initNodes();
+    if(!reduceMotion){ requestAnimationFrame(step); } else { step(); }
+  }
+  window.addEventListener('resize', () => { resize(); initNodes(); }, { passive:true });
+  start();
+</script>
 
 </body>
 </html>
